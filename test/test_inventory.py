@@ -61,7 +61,7 @@ class TestRuntimeMethods(unittest.TestCase):
     def test_get_data(self, mock_get, mock_client):
         mock_client.return_value = None
         mock_get.return_value = None
-        test_inv = SkytapInventory(None,None,None,"test/config_fixtures/config_fixture.ini")
+        test_inv = SkytapInventory(None,None,None,"test/config_fixtures/config_fixture_with_creds.ini")
         expected_calling_url = (u"https://_testfixture_.net/configurations/0000000.json")
         test_inv.get_data()
         mock_get.assert_called_once_with(expected_calling_url)
@@ -70,15 +70,19 @@ class TestRuntimeMethods(unittest.TestCase):
 
 class TestParseMethods(unittest.TestCase):
     def setUp(self):
-        with(open("dynamic_inventory_fixture.json", "r")) as inv_fh:
-            with(open("api_response_fixture.json", "r")) as api_fh:
-                self.expected_inventory = json.loads(inv_fh.read())
-                self.mock_api_response = json.loads(api_fh.read())
+        with(open("dynamic_inventory_fixture_with_api_creds.json", "r")) as inv_creds_fh:
+            with(open("dynamic_inventory_fixture_no_api_creds.json", "r")) as inv_nocreds_fh:
+                with(open("api_response_fixture.json", "r")) as api_fh:
+                    self.expected_inventory_with_api_creds = json.loads(inv_creds_fh.read())
+                    self.expected_inventory_no_api_creds = json.loads(inv_nocreds_fh.read())
+                    self.mock_api_response = json.loads(api_fh.read())
 
-        self.script_under_test = SkytapInventory(None,None,None,"test/config_fixtures/config_fixture.ini")  
-        self.script_under_test.get_data = MagicMock(return_value=self.mock_api_response)
+        self.test_instance_with_api_creds = SkytapInventory(None,None,None,"test/config_fixtures/config_fixture_with_creds.ini")  
+        self.test_instance_no_api_creds = SkytapInventory(None,None,None,"test/config_fixtures/config_fixture_no_creds.ini")  
+        self.test_instance_with_api_creds.get_data = MagicMock(return_value=self.mock_api_response)
+        self.test_instance_no_api_creds.get_data = MagicMock(return_value=self.mock_api_response)
+
     
-
     def test_correct_empty_inventory(self): 
         testObj = SkytapInventory()
         knownGood = {"_meta":{"hostvars":{}}}
@@ -91,7 +95,7 @@ class TestParseMethods(unittest.TestCase):
                         u"ansible_ssh_port": u"65535",
                         u"ansible_ssh_private_key_file": u"_ANSIBLE-SSH-PRIVATE-KEY-FILE_",
                         u"ansible_ssh_user": u"_ANSIBLE-SSH-USER_"}
-        actual = self.script_under_test.ansible_config_vars
+        actual = self.test_instance_no_api_creds.ansible_config_vars
         self.assertDictEqual(known_good, actual)
 
 
@@ -99,38 +103,60 @@ class TestParseMethods(unittest.TestCase):
         known_good = {u"api_token": u"abcdefghijklmnopqrstuvwxyz01234567890abcef",
                         u"base_url": u"https://_testfixture_.net",
                         u"username": u"_SKYTAP-USERNAME_"}
-        actual = self.script_under_test.skytap_vars
+        actual = self.test_instance_no_api_creds.skytap_vars
         self.assertDictEqual(known_good, actual)
 
 
     def test_skytap_env_vars(self):
         known_good =  {u"configuration_id": u"0000000", 
-                       u"network_type": "nat_vpn"}
-        actual = self.script_under_test.skytap_env_vars
+                       u"network_type": u"nat_vpn",
+                       u'use_api_credentials':True,
+                       u'skytap_vm_username':u'_FAKEUSER_',
+                       u'api_credential_delimiter':u'/'}
+        actual = self.test_instance_with_api_creds.skytap_env_vars
         self.assertDictEqual(known_good, actual)
 
 
     def test_parse_vpn_ips(self):
-        mock_api_data = self.script_under_test.get_data() #fixture data 
-        actual_result = self.script_under_test.build_vpn_ip_group(mock_api_data, self.script_under_test.inventory)
-        self.assertDictEqual(self.expected_inventory, actual_result)
+        mock_api_data = self.test_instance_with_api_creds.get_data() #fixture data; either test instance works
+        
+        actual_result_with_creds = \
+                self.test_instance_with_api_creds.build_vpn_ip_group(mock_api_data, self.test_instance_with_api_creds.inventory)
+        self.assertDictEqual(self.expected_inventory_with_api_creds, actual_result_with_creds)
+        
+        actual_result_no_creds = \
+                self.test_instance_no_api_creds.build_vpn_ip_group(mock_api_data, self.test_instance_no_api_creds.inventory)
+        self.assertDictEqual(self.expected_inventory_no_api_creds, actual_result_no_creds)
 
 
     def test_parse_private_ips(self):
-        mock_api_data = self.script_under_test.get_data() #fixture data 
-        actual_result = self.script_under_test.build_private_ip_group(mock_api_data, self.script_under_test.inventory)
-        self.assertDictEqual(self.expected_inventory, actual_result)
+        mock_api_data = self.test_instance_with_api_creds.get_data() #fixture data; either test instance works
+        
+        actual_result_with_creds = \
+                self.test_instance_with_api_creds.build_private_ip_group(mock_api_data, self.test_instance_with_api_creds.inventory)
+        self.assertDictEqual(self.expected_inventory_with_api_creds, actual_result_with_creds)
+
+        actual_result_no_creds = \
+                self.test_instance_no_api_creds.build_private_ip_group(mock_api_data, self.test_instance_no_api_creds.inventory)
+        self.assertDictEqual(self.expected_inventory_no_api_creds, actual_result_no_creds)
 
 
     def test_parse_incr_ips(self):
-        mock_api_data = self.script_under_test.get_data() #fixture data 
-        actual_result = self.script_under_test.build_incr_ip_group(mock_api_data, self.script_under_test.inventory)
-        self.assertDictEqual(self.expected_inventory, actual_result)
+        mock_api_data = self.test_instance_with_api_creds.get_data() #fixture data; either test instance works 
+
+        actual_result_with_creds = \
+                self.test_instance_with_api_creds.build_incr_ip_group(mock_api_data, self.test_instance_with_api_creds.inventory)
+        self.assertDictEqual(self.expected_inventory_with_api_creds, actual_result_with_creds)
+
+        actual_result_no_creds = \
+                self.test_instance_no_api_creds.build_incr_ip_group(mock_api_data, self.test_instance_no_api_creds.inventory)
+        self.assertDictEqual(self.expected_inventory_no_api_creds, actual_result_no_creds)
 
 
+    #end-to-end test with one of the credentials parsing methods
     def test_run_as_script(self):
-        actual_result = json.loads(SkytapInventory.run_as_script(self.script_under_test))
-        self.assertDictEqual(self.expected_inventory, actual_result) 
+        actual_result = json.loads(SkytapInventory.run_as_script(self.test_instance_with_api_creds))
+        self.assertDictEqual(self.expected_inventory_with_api_creds, actual_result) 
         
 
 if __name__ == "__main__":

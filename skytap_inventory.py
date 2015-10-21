@@ -61,7 +61,10 @@ class SkytapInventory(object):
     def __init__(self, configuration_id=None, username=None, api_token=None, override_config_file=None):
         self._ansible_config_vars =     {}
         self._skytap_env_vars     =     {u"network_type":u"private", 
-                                            u"configuration_id":configuration_id}
+                                            u"configuration_id":configuration_id,
+                                            u'use_api_credentials':False,
+                                            u'skytap_vm_username':None,
+                                            u'api_credential_delimiter':'/'} 
         self._skytap_vars         =     {u"base_url":u"https:/cloud.skytap.com/v2/",
                                             u"username":username,
                                             u"api_token":api_token}
@@ -108,6 +111,16 @@ class SkytapInventory(object):
             self.skytap_env_vars["network_type"] = unicode(config.get("skytap_env_vars", "network_type"))
         if config.has_option("skytap_vars", "base_url"):
             self.skytap_vars[u"base_url"] = unicode(config.get("skytap_vars", "base_url"))
+        #these vars are used to set ssh credentials from the 'credentials' field in the Skytap API response for VM's
+        if config.has_option('skytap_env_vars', 'use_api_credentials'):
+            #no booleans in ini; 'true' is true, everything else is false.  This is an on/off flag. 
+            value = unicode(config.get('skytap_env_vars', 'use_api_credentials')).upper()
+            if (value == u'TRUE'):
+                self.skytap_env_vars[u'use_api_credentials'] = True
+        if config.has_option('skytap_env_vars', 'skytap_vm_username'):
+            self.skytap_env_vars[u'skytap_vm_username'] = unicode(config.get('skytap_env_vars', 'skytap_vm_username'))
+        if config.has_option('skytap_env_vars', 'api_credential_delimiter'):
+            self.skytap_env_vars[u'api_credential_delimiter'] = unicode(config.get('skytap_env_vars', 'api_credential_delimiter'))
         #skytap.ini may over-ride ansible variables  
         if config.has_option("ansible_ssh_vars", "user"):
             self.ansible_config_vars[u"ansible_ssh_user"] = unicode(config.get("ansible_ssh_vars", "user"))
@@ -128,40 +141,77 @@ class SkytapInventory(object):
         url = Client.construct_url(self.skytap_vars[u"base_url"], query_string)
         self._clientData = self._client.get(url)
         return self._clientData
+    
+
+    #add user/pass data to the individual hosts in the inventory if the necessary data is present in both skytap.ini nd the API response
+    #this is set for VM's, not for interfaces -- so each of the network parser types will use this method the same way
+    #NOTE: this parses a free-form field; it expects a <user_token> <delimiter_token> <password_token> format; 
+    #if anything else is used, this will probably break
+    def parse_credentials_for_vm(self, vm_data):
+        user_pass = {} 
+        if self.skytap_env_vars[u'use_api_credentials'] is not True: return user_pass 
+        elif len(vm_data['credentials']) < 1: return user_pass
+        
+        #local shortnames
+        l_delim = self.skytap_env_vars[u'api_credential_delimiter'] 
+        l_uname = self.skytap_env_vars[u'skytap_vm_username']
+
+        #if there is a single credential pair and username is unset, use the pair available
+        if (len(vm_data['credentials']) is 1) and (l_uname is None):
+            selected_creds = vm_data['credentials']
+        else: 
+            #credentials object is a list of dictionaries; each dictionary contains a field called 'text'.  We're interested in 
+            #the first token of the 'text' field when the field is split on some delimeter (e.g., {'text': 'username / password'})
+            selected_creds = filter(lambda cred_obj:cred_obj['text'].split(l_delim)[0].strip() == l_uname, vm_data['credentials'])
+        
+        if len(selected_creds) < 1: return user_pass #no match; return empty dict
+        else: selected_creds = selected_creds[0]['text']
+
+        #now split the selected_creds string into a dictionary that we can merge with the inventory data structure
+        user_pass[u'ansible_ssh_user'] = unicode(selected_creds.split(l_delim)[0].strip())
+        user_pass[u'ansible_ssh_pass'] = unicode(selected_creds.split(l_delim)[1].strip())
+        return user_pass 
 
 
     def build_private_ip_group(self, client_data, inventory):
         for vm in client_data["vms"]:
+            creds_dict = self.parse_credentials_for_vm(vm)
             for interface in vm["interfaces"]: 
                 if (interface.has_key("ip")) and (interface["ip"] is not None):
                     hostname = unicode(interface["hostname"])
                     inventory[u"skytap_environment"][u"hosts"].append(hostname)
-                    inventory[u"_meta"][u"hostvars"][hostname] = {u"ansible_ssh_host":unicode(interface["ip"])} 
+                    inventory[u"_meta"][u"hostvars"][hostname] = {u"ansible_ssh_host":unicode(interface["ip"])}
+                    inventory[u'_meta'][u'hostvars'][hostname].update(creds_dict)
         return inventory
 
 
     def build_incr_ip_group(self, client_data, inventory): 
         """update the inventory file to include a group for the INCR IP addresses""" 
         for vm in client_data["vms"]: 
+            creds_dict = self.parse_credentials_for_vm(vm)
             for interface in vm["interfaces"]:
                 if (interface.has_key("nat_addresses")) and (interface["nat_addresses"].has_key("network_nat_addresses")):  
                     for network_nat in interface["nat_addresses"]["network_nat_addresses"]:
                         hostname = unicode(interface["hostname"])
                         inventory[u"skytap_environment"][u"hosts"].append(hostname)
                         inventory[u"_meta"][u"hostvars"][hostname] = {u"ansible_ssh_host":unicode(network_nat["ip_address"])} 
+                        inventory[u'_meta'][u'hostvars'][hostname].update(creds_dict)
         return inventory
 
 
     def build_vpn_ip_group(self, client_data, inventory): 
         """update the inventory file to include a group for the VPN IP addresees"""
         for vm in client_data["vms"]:
+            creds_dict = self.parse_credentials_for_vm(vm)
             for interface in vm["interfaces"]:
                 if (interface.has_key("nat_addresses")) and (interface["nat_addresses"].has_key("vpn_nat_addresses")):
                     for vpn_nat in interface["nat_addresses"]["vpn_nat_addresses"]:
                         hostname = unicode(interface["hostname"])
                         inventory[u"skytap_environment"][u"hosts"].append(hostname)
-                        inventory[u"_meta"][u"hostvars"][hostname] = {u"ansible_ssh_host":unicode(vpn_nat["ip_address"])} 
+                        inventory[u'_meta'][u"hostvars"][hostname] = {u"ansible_ssh_host":unicode(vpn_nat["ip_address"])}
+                        inventory[u'_meta'][u'hostvars'][hostname].update(creds_dict)
         return inventory
+
 
     def run_as_script(self): 
         """instantiate the class, set configuration, get the API data, parse it into an inventory"""
