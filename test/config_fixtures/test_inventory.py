@@ -84,7 +84,7 @@ class TestParseMethods(unittest.TestCase):
 
     
     def test_correct_empty_inventory(self): 
-        testObj = SkytapInventory(None,None,None,"test/config_fixtures/config_fixture_with_creds.ini")
+        testObj = SkytapInventory()
         knownGood = {"_meta":{"hostvars":{}}}
         self.assertDictEqual(knownGood, testObj.empty_inventory)
 
