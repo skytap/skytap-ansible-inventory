@@ -24,7 +24,6 @@ from client import Client
 
 RESOURCE_NAME = "configurations"
 
-
 class SkytapInventory(object):
 
     
@@ -65,7 +64,7 @@ class SkytapInventory(object):
                                             u'use_api_credentials':False,
                                             u'skytap_vm_username':None,
                                             u'api_credential_delimiter':'/'} 
-        self._skytap_vars         =     {u"base_url":u"https:/cloud.skytap.com/v2/",
+        self._skytap_vars         =     {u"base_url":u"https://cloud.skytap.com/v2/",
                                             u"username":username,
                                             u"api_token":api_token}
         self._empty_inventory     =     {u"_meta":{u"hostvars": {}}}
@@ -77,7 +76,14 @@ class SkytapInventory(object):
         
         self._client_data = {}
         self._inventory = self._inventory_template
+   
+        for vars_dict in (self.skytap_env_vars, self.skytap_vars):
+            for var in vars_dict:
+                if os.environ.get('SKYTAP_' + str(var).upper()):
+                    vars_dict[var] = unicode(os.environ.get('SKYTAP_' + str(var).upper()))
+
         self.read_settings(override_config_file)
+
         self._client = Client(self.skytap_vars[u"base_url"], self.skytap_vars[u"username"], self.skytap_vars[u"api_token"])
 
 
