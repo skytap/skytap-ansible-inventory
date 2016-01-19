@@ -58,7 +58,7 @@ class TestInstantiationMethods(UnsetSkytapEnvironmentVarsTestCase):
                 SkytapInventory,None,None,None,"test/config_fixtures/config_missing_configuration_id_fixture.ini")
 
     @mock.patch("skytap_inventory.SkytapInventory.read_settings")
-    @mock.patch("client.Client.__init__")
+    @mock.patch("skytap_inventory.Client.__init__")
     def test_calls_correct_methods(self, mock_client, mock_read_settings):
         mock_client.return_value = None
         SkytapInventory()
@@ -67,8 +67,8 @@ class TestInstantiationMethods(UnsetSkytapEnvironmentVarsTestCase):
 
 
 class TestRuntimeMethods(UnsetSkytapEnvironmentVarsTestCase):
-    @mock.patch("client.Client.__init__")
-    @mock.patch("client.Client.get")
+    @mock.patch("skytap_inventory.Client.__init__")
+    @mock.patch("skytap_inventory.Client.get")
     def test_get_data(self, mock_get, mock_client):
         mock_client.return_value = None
         mock_get.return_value = None
