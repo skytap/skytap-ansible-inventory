@@ -20,6 +20,7 @@ if __name__ == "__main__" and __package__ is None:
     from os import sys, path
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
+import os
 import json
 import six
 from six.moves import configparser
@@ -30,8 +31,18 @@ from mock import MagicMock  #pip install mock for Python 2.7
 
 from skytap_inventory import SkytapInventory
 
+class UnsetSkytapEnvironmentVarsTestCase(unittest.TestCase):
+    def setUp(self):
+        self.save_environ = os.environ
 
-class TestInstantiationMethods(unittest.TestCase): 
+        for k in [ skytap_var for skytap_var in os.environ if skytap_var.startswith('SKYTAP_') ]:
+            os.environ.pop(k)
+
+    def tearDown(self):
+        os.environ = self.save_environ
+    
+
+class TestInstantiationMethods(UnsetSkytapEnvironmentVarsTestCase): 
     def test_asert_on_username_missing(self):
         self.assertRaises(configparser.NoOptionError, 
                 SkytapInventory,None,None,None,"test/config_fixtures/config_missing_username_fixture.ini")
@@ -47,7 +58,7 @@ class TestInstantiationMethods(unittest.TestCase):
                 SkytapInventory,None,None,None,"test/config_fixtures/config_missing_configuration_id_fixture.ini")
 
     @mock.patch("skytap_inventory.SkytapInventory.read_settings")
-    @mock.patch("client.Client.__init__")
+    @mock.patch("skytap_inventory.Client.__init__")
     def test_calls_correct_methods(self, mock_client, mock_read_settings):
         mock_client.return_value = None
         SkytapInventory()
@@ -55,9 +66,9 @@ class TestInstantiationMethods(unittest.TestCase):
         mock_client.assert_called_once_with(mock.ANY, mock.ANY, mock.ANY)
 
 
-class TestRuntimeMethods(unittest.TestCase):
-    @mock.patch("client.Client.__init__")
-    @mock.patch("client.Client.get")
+class TestRuntimeMethods(UnsetSkytapEnvironmentVarsTestCase):
+    @mock.patch("skytap_inventory.Client.__init__")
+    @mock.patch("skytap_inventory.Client.get")
     def test_get_data(self, mock_get, mock_client):
         mock_client.return_value = None
         mock_get.return_value = None
@@ -68,8 +79,10 @@ class TestRuntimeMethods(unittest.TestCase):
 
 
 
-class TestParseMethods(unittest.TestCase):
+class TestParseMethods(UnsetSkytapEnvironmentVarsTestCase):
     def setUp(self):
+        UnsetSkytapEnvironmentVarsTestCase.setUp(self)
+
         with(open("dynamic_inventory_fixture_with_api_creds.json", "r")) as inv_creds_fh:
             with(open("dynamic_inventory_fixture_no_api_creds.json", "r")) as inv_nocreds_fh:
                 with(open("api_response_fixture.json", "r")) as api_fh:
@@ -82,7 +95,6 @@ class TestParseMethods(unittest.TestCase):
         self.test_instance_with_api_creds.get_data = MagicMock(return_value=self.mock_api_response)
         self.test_instance_no_api_creds.get_data = MagicMock(return_value=self.mock_api_response)
 
-    
     def test_correct_empty_inventory(self): 
         testObj = SkytapInventory(None,None,None,"test/config_fixtures/config_fixture_with_creds.ini")
         knownGood = {"_meta":{"hostvars":{}}}
@@ -98,6 +110,19 @@ class TestParseMethods(unittest.TestCase):
         actual = self.test_instance_no_api_creds.ansible_config_vars
         self.assertDictEqual(known_good, actual)
 
+
+    def test_skytap_vars_from_inventory(self):
+        known_good = {u"api_token": u"HORSERADISH",
+                        u"base_url": u"CUCUMBER",
+                        u"username": u"POTATO"}
+
+        os.environ['SKYTAP_API_TOKEN'] = 'HORSERADISH'
+        os.environ['SKYTAP_BASE_URL'] = 'CUCUMBER'
+        os.environ['SKYTAP_USERNAME'] = 'POTATO'
+        os.environ['SKYTAP_CONFIGURATION_ID'] = 'BEET'
+
+        actual = SkytapInventory().skytap_vars
+        self.assertDictEqual(known_good, actual)
 
     def test_skytap_vars(self):
         known_good = {u"api_token": u"abcdefghijklmnopqrstuvwxyz01234567890abcef",
