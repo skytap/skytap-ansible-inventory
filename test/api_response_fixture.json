@@ -53,6 +53,24 @@
                         "id":"0000000",
                         "configuration_id":"0000000"
                     }
+                },
+                {
+                    "vpn":{
+                        "nat_enabled":true,
+                        "remote_peer_ip":"0.0.0.0",
+                        "name":"Test Fixture NAT VPN 2",
+                        "enabled":true,
+                        "id":"vpn-000001",
+                        "remote_subnets":"10.1.0.0/24, 10.1.1.0/24, 10.1.2.0/24, 10.1.4.0/24, 10.1.6.0/24, 10.1.8.0/24, 10.1.16.0/24, 172.16.89.0/24, 192.168.0.0/16"
+                    },
+                    "connected":true,
+                    "id":"0000000-vpn-000001",
+                    "network":{
+                        "subnet":"192.168.0.0/24",
+                        "network_name":"Fixture Name",
+                        "id":"0000000",
+                        "configuration_id":"0000000"
+                    }
                 }
             ],
             "url":"https://_test_fixture_.net/configurations/0000000/networks/0000000",
@@ -82,6 +100,24 @@
                                 },
                                 "connected":true,
                                 "id":"0000000-vpn-0000000",
+                                "network":{
+                                    "subnet":"192.168.0.0/24",
+                                    "network_name":"Fixture Name",
+                                    "id":"0000000",
+                                    "configuration_id":"0000000"
+                                }
+                            },
+                            {
+                                "vpn":{
+                                    "nat_enabled":true,
+                                    "remote_peer_ip":"0.0.0.0",
+                                    "name":"Test Fixture NAT VPN 2",
+                                    "enabled":true,
+                                    "id":"vpn-000001",
+                                    "remote_subnets":"10.1.0.0/24, 10.1.1.0/24, 10.1.2.0/24, 10.1.4.0/24, 10.1.6.0/24, 10.1.8.0/24, 10.1.16.0/24, 172.16.89.0/24, 192.168.0.0/16"
+                                },
+                                "connected":true,
+                                "id":"0000000-vpn-000001",
                                 "network":{
                                     "subnet":"192.168.0.0/24",
                                     "network_name":"Fixture Name",
@@ -258,6 +294,12 @@
                                 "ip_address":"0.0.0.0",
                                 "vpn_url":"https://_test_fixture_.net/vpns/vpn-000000",
                                 "vpn_id":"vpn-000000"
+                            },
+                            {
+                                "vpn_name":"Test Fixture NAT VPN",
+                                "ip_address":"3.1.4.1",
+                                "vpn_url":"https://_test_fixture_.net/vpns/vpn-000001",
+                                "vpn_id":"vpn-000001"
                             }
                         ],
                         "network_nat_addresses":[
