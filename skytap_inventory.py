@@ -107,10 +107,11 @@ class SkytapInventory(object):
         return self._ansible_config_vars
 
 
-    """ Excecution path """
     def __init__(self, configuration_id=None, username=None, api_token=None, override_config_file=None):
+        """ Excecution path """
         self._ansible_config_vars =     {}
-        self._skytap_env_vars     =     {u"network_type":u"private", 
+        self._skytap_env_vars     =     {u"network_type":u"private",
+                                         u"network_connection_id":None,
                                             u"configuration_id":configuration_id,
                                             u'use_api_credentials':False,
                                             u'skytap_vm_username':None,
@@ -122,10 +123,10 @@ class SkytapInventory(object):
         self._inventory_template  =     {u"skytap_environment"  : {u"hosts": [], u"vars": {}},
                                             u"_meta": {u"hostvars":{}}}
         self._network_types        =     {"nat_vpn": self.build_vpn_ip_group, 
-                                            "nat_incr":self.build_incr_ip_group,
+                                            "nat_icnr":self.build_icnr_ip_group,
                                             "private": self.build_private_ip_group}
         
-        self._client_data = {}
+        self._clientData = {}
         self._inventory = self._inventory_template
    
         for vars_dict in (self.skytap_env_vars, self.skytap_vars):
@@ -166,6 +167,8 @@ class SkytapInventory(object):
         #defaults are set in __init__; config may over-ride 
         if config.has_option("skytap_env_vars", "network_type"):
             self.skytap_env_vars["network_type"] = unicode(config.get("skytap_env_vars", "network_type"))
+        if config.has_option("skytap_env_vars", "network_connection_id"):
+            self.skytap_env_vars["network_connection_id"] = unicode(config.get("skytap_env_vars", "network_connection_id"))
         if config.has_option("skytap_vars", "base_url"):
             self.skytap_vars[u"base_url"] = unicode(config.get("skytap_vars", "base_url"))
         #these vars are used to set ssh credentials from the 'credentials' field in the Skytap API response for VM's
@@ -242,13 +245,24 @@ class SkytapInventory(object):
         return inventory
 
 
-    def build_incr_ip_group(self, client_data, inventory): 
-        """update the inventory file to include a group for the INCR IP addresses""" 
+    def build_icnr_ip_group(self, client_data, inventory): 
+        """update the inventory file to include a group for the ICNR IP addresses"""
+
+        tunnel_source_network = None
+        if self.skytap_env_vars["network_connection_id"]:
+            matching_tunnels = [ tunnel for tunnel in client_data["tunnels"] if tunnel["id"] == self.skytap_env_vars["network_connection_id"] ]
+            if not matching_tunnels:
+                raise Exception("No tunnels with id %s found" % self.skytap_env_vars["network_connection_id"])
+
+            tunnel_source_network = matching_tunnels[0]["source_network"]["url"]
+
         for vm in client_data["vms"]: 
             creds_dict = self.parse_credentials_for_vm(vm)
             for interface in vm["interfaces"]:
                 if (interface.has_key("nat_addresses")) and (interface["nat_addresses"].has_key("network_nat_addresses")):  
                     for network_nat in interface["nat_addresses"]["network_nat_addresses"]:
+                        if tunnel_source_network and network_nat["network_url"] != tunnel_source_network:
+                            continue
                         hostname = unicode(interface["hostname"])
                         inventory[u"skytap_environment"][u"hosts"].append(hostname)
                         inventory[u"_meta"][u"hostvars"][hostname] = {u"ansible_ssh_host":unicode(network_nat["ip_address"])} 
@@ -263,21 +277,29 @@ class SkytapInventory(object):
             for interface in vm["interfaces"]:
                 if (interface.has_key("nat_addresses")) and (interface["nat_addresses"].has_key("vpn_nat_addresses")):
                     for vpn_nat in interface["nat_addresses"]["vpn_nat_addresses"]:
+                        if self.skytap_env_vars["network_connection_id"] and self.skytap_env_vars["network_connection_id"] != vpn_nat["vpn_id"]:
+                            continue
                         hostname = unicode(interface["hostname"])
                         inventory[u"skytap_environment"][u"hosts"].append(hostname)
                         inventory[u'_meta'][u"hostvars"][hostname] = {u"ansible_ssh_host":unicode(vpn_nat["ip_address"])}
                         inventory[u'_meta'][u'hostvars'][hostname].update(creds_dict)
+                        
+                        # just hostname/nat_vpn per interface
+                        break
         return inventory
 
-
-    def run_as_script(self): 
-        """instantiate the class, set configuration, get the API data, parse it into an inventory"""
-        #inventory_object = SkytapInventory()
+    def get_inventory(self):
+        """get the API data, parse it into an inventory"""
         api_data = self.get_data() 
         network_type = self.skytap_env_vars[u"network_type"]
-        parse_method = self.network_types[network_type] 
+        parse_method = self.network_types[str(network_type)] 
         parse_method(api_data, self.inventory)
-        return json.dumps(self.inventory)
+
+        return self.inventory
+
+    def run_as_script(self): 
+        """get the invenotry data, dump it into json string"""
+        return json.dumps(self.get_inventory())
 
 
 if __name__ == "__main__":

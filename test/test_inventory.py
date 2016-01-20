@@ -135,6 +135,7 @@ class TestParseMethods(UnsetSkytapEnvironmentVarsTestCase):
     def test_skytap_env_vars(self):
         known_good =  {u"configuration_id": u"0000000", 
                        u"network_type": u"nat_vpn",
+                       u"network_connection_id": None,
                        u'use_api_credentials':True,
                        u'skytap_vm_username':u'_FAKEUSER_',
                        u'api_credential_delimiter':u'/'}
@@ -166,15 +167,15 @@ class TestParseMethods(UnsetSkytapEnvironmentVarsTestCase):
         self.assertDictEqual(self.expected_inventory_no_api_creds, actual_result_no_creds)
 
 
-    def test_parse_incr_ips(self):
+    def test_parse_icnr_ips(self):
         mock_api_data = self.test_instance_with_api_creds.get_data() #fixture data; either test instance works 
 
         actual_result_with_creds = \
-                self.test_instance_with_api_creds.build_incr_ip_group(mock_api_data, self.test_instance_with_api_creds.inventory)
+                self.test_instance_with_api_creds.build_icnr_ip_group(mock_api_data, self.test_instance_with_api_creds.inventory)
         self.assertDictEqual(self.expected_inventory_with_api_creds, actual_result_with_creds)
 
         actual_result_no_creds = \
-                self.test_instance_no_api_creds.build_incr_ip_group(mock_api_data, self.test_instance_no_api_creds.inventory)
+                self.test_instance_no_api_creds.build_icnr_ip_group(mock_api_data, self.test_instance_no_api_creds.inventory)
         self.assertDictEqual(self.expected_inventory_no_api_creds, actual_result_no_creds)
 
 
