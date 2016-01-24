@@ -301,7 +301,9 @@ class SkytapInventory(object):
         """get the invenotry data, dump it into json string"""
         return json.dumps(self.get_inventory())
 
+def main():
+    print(SkytapInventory().run_as_script())
 
 if __name__ == "__main__":
-    inv = SkytapInventory()
-    print(inv.run_as_script())
+    main()
+
