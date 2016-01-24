@@ -45,17 +45,17 @@ class UnsetSkytapEnvironmentVarsTestCase(unittest.TestCase):
 class TestInstantiationMethods(UnsetSkytapEnvironmentVarsTestCase): 
     def test_asert_on_username_missing(self):
         self.assertRaises(configparser.NoOptionError, 
-                SkytapInventory,None,None,None,"test/config_fixtures/config_missing_username_fixture.ini")
+                SkytapInventory,None,None,None,"tests/config_fixtures/config_missing_username_fixture.ini")
 
 
     def test_assert_on_token_missing(self):
         self.assertRaises(configparser.NoOptionError,
-                SkytapInventory,None,None,None,"test/config_fixtures/config_missing_token_fixture.ini")
+                SkytapInventory,None,None,None,"tests/config_fixtures/config_missing_token_fixture.ini")
     
 
     def test_assert_on_configuration_id_missing(self):
         self.assertRaises(configparser.NoOptionError,
-                SkytapInventory,None,None,None,"test/config_fixtures/config_missing_configuration_id_fixture.ini")
+                SkytapInventory,None,None,None,"tests/config_fixtures/config_missing_configuration_id_fixture.ini")
 
     @mock.patch("skytap_inventory.SkytapInventory.read_settings")
     @mock.patch("skytap_inventory.Client.__init__")
@@ -72,7 +72,7 @@ class TestRuntimeMethods(UnsetSkytapEnvironmentVarsTestCase):
     def test_get_data(self, mock_get, mock_client):
         mock_client.return_value = None
         mock_get.return_value = None
-        test_inv = SkytapInventory(None,None,None,"test/config_fixtures/config_fixture_with_creds.ini")
+        test_inv = SkytapInventory(None,None,None,"tests/config_fixtures/config_fixture_with_creds.ini")
         expected_calling_url = (u"https://_testfixture_.net/configurations/0000000.json")
         test_inv.get_data()
         mock_get.assert_called_once_with(expected_calling_url)
@@ -83,20 +83,20 @@ class TestParseMethods(UnsetSkytapEnvironmentVarsTestCase):
     def setUp(self):
         UnsetSkytapEnvironmentVarsTestCase.setUp(self)
 
-        with(open("dynamic_inventory_fixture_with_api_creds.json", "r")) as inv_creds_fh:
-            with(open("dynamic_inventory_fixture_no_api_creds.json", "r")) as inv_nocreds_fh:
-                with(open("api_response_fixture.json", "r")) as api_fh:
+        with(open("tests/dynamic_inventory_fixture_with_api_creds.json", "r")) as inv_creds_fh:
+            with(open("tests/dynamic_inventory_fixture_no_api_creds.json", "r")) as inv_nocreds_fh:
+                with(open("tests/api_response_fixture.json", "r")) as api_fh:
                     self.expected_inventory_with_api_creds = json.loads(inv_creds_fh.read())
                     self.expected_inventory_no_api_creds = json.loads(inv_nocreds_fh.read())
                     self.mock_api_response = json.loads(api_fh.read())
 
-        self.test_instance_with_api_creds = SkytapInventory(None,None,None,"test/config_fixtures/config_fixture_with_creds.ini")  
-        self.test_instance_no_api_creds = SkytapInventory(None,None,None,"test/config_fixtures/config_fixture_no_creds.ini")  
+        self.test_instance_with_api_creds = SkytapInventory(None,None,None,"tests/config_fixtures/config_fixture_with_creds.ini")  
+        self.test_instance_no_api_creds = SkytapInventory(None,None,None,"tests/config_fixtures/config_fixture_no_creds.ini")  
         self.test_instance_with_api_creds.get_data = MagicMock(return_value=self.mock_api_response)
         self.test_instance_no_api_creds.get_data = MagicMock(return_value=self.mock_api_response)
 
     def test_correct_empty_inventory(self): 
-        testObj = SkytapInventory(None,None,None,"test/config_fixtures/config_fixture_with_creds.ini")
+        testObj = SkytapInventory(None,None,None,"tests/config_fixtures/config_fixture_with_creds.ini")
         knownGood = {"_meta":{"hostvars":{}}}
         self.assertDictEqual(knownGood, testObj.empty_inventory)
 
