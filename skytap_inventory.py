@@ -28,6 +28,7 @@ from urlparse import urljoin, urlunsplit
 from urllib import urlencode
 
 RESOURCE_NAME = "configurations"
+DEFAULT_BASE_URL = "https://cloud.skytap.com/v2/" 
 LOG = logging.getLogger(__name__)
 
 class Client(object):
@@ -107,7 +108,7 @@ class SkytapInventory(object):
         return self._ansible_config_vars
 
 
-    def __init__(self, configuration_id=None, username=None, api_token=None, override_config_file=None):
+    def __init__(self, configuration_id=None, username=None, api_token=None, override_config_file=None, base_url=DEFAULT_BASE_URL):
         """ Excecution path """
         self._ansible_config_vars =     {}
         self._skytap_env_vars     =     {u"network_type":u"private",
@@ -116,7 +117,7 @@ class SkytapInventory(object):
                                             u'use_api_credentials':False,
                                             u'skytap_vm_username':None,
                                             u'api_credential_delimiter':'/'} 
-        self._skytap_vars         =     {u"base_url":u"https://cloud.skytap.com/v2/",
+        self._skytap_vars         =     {u"base_url":base_url,
                                             u"username":username,
                                             u"api_token":api_token}
         self._empty_inventory     =     {u"_meta":{u"hostvars": {}}}
@@ -125,16 +126,16 @@ class SkytapInventory(object):
         self._network_types        =     {"nat_vpn": self.build_vpn_ip_group, 
                                             "nat_icnr":self.build_icnr_ip_group,
                                             "private": self.build_private_ip_group}
-        
         self._clientData = {}
         self._inventory = self._inventory_template
-   
+
+        self.read_settings(override_config_file)
+        
+        #over-ride settings from environment variables, if present 
         for vars_dict in (self.skytap_env_vars, self.skytap_vars):
             for var in vars_dict:
                 if os.environ.get('SKYTAP_' + str(var).upper()):
                     vars_dict[var] = unicode(os.environ.get('SKYTAP_' + str(var).upper()))
-
-        self.read_settings(override_config_file)
 
         self._client = Client(self.skytap_vars[u"base_url"], self.skytap_vars[u"username"], self.skytap_vars[u"api_token"])
 
@@ -301,7 +302,9 @@ class SkytapInventory(object):
         """get the invenotry data, dump it into json string"""
         return json.dumps(self.get_inventory())
 
+def main():
+    print(SkytapInventory().run_as_script())
 
 if __name__ == "__main__":
-    inv = SkytapInventory()
-    print(inv.run_as_script())
+    main()
+
