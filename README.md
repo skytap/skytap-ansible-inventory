@@ -1,4 +1,4 @@
-#Skytap Dynamic Inventory
+# Skytap Dynamic Inventory
 Ansible is a lightweight configuration management/orchestration tool that works over SSH, with minimal requirements for managed hosts: 
 http://docs.ansible.com/ansible/index.html 
 
@@ -7,7 +7,7 @@ This Python script wraps the Environment/Configuration method of the Skytap API,
 Together, this dynamic inventory script and Ansible provide Skytap users the ability to finely tune administration of a sets of hosts within a Skytap Environment.  
 
 
-##Examples
+## Examples
 *Usage example* (Ansible-ping all of the hosts in the environment): 
 
     ansible -i skytap_inventory.py all -m ping
@@ -25,7 +25,7 @@ skytap_inventory.py may be run in standalone mode, to return JSON structured in 
 ## skytap.ini  
 An example skytap.ini is included with this package: 
 
-    EXAMPLEskytap.ini 
+    EXAMPLE_skytap.ini 
 
 Skytap specific configuration is set in two blocks, in skytap.ini: 
 `[skytap_vars]`  -- global vars related to the Skytap account 
@@ -37,7 +37,7 @@ Copy the example to a file named skytap.ini, and fill in your credentials and en
 
 **Don't forget to add skytap.ini to your .ignore files for your version control system!** This file, when properly configured, will contain your Skytap API credentials, and may contain information such as SSH usernames and password.  ***Do not check it in to source control!*** 
 
-##Ansible Notes 
+## Ansible Notes 
  Make sure you've got ansible installed: 
  http://docs.ansible.com/ansible/intro_installation.html 
 
@@ -74,9 +74,9 @@ empty parameters.  You'll probably get esoteric SSH errors such as:
         FAILED => SSH encountered an unknown error. The output was:
         command-line line 0: Missing argument.
 
-use the `[ansible_ssh_vars]` block in your skytap.ini to set parameters specific to your Skytap Environment (such as usernames, SSH key locations, ports -- see `EXAMPLEskytap.ini` for possible values
+use the `[ansible_ssh_vars]` block in your skytap.ini to set parameters specific to your Skytap Environment (such as usernames, SSH key locations, ports -- see `EXAMPLE_skytap.ini` for possible values
 
-##Unit Tests
+## Unit Tests
 If you need to extend the inventory script for personal use, this package includes a basic set of unit tests which should validate correct behavior for  `skytap_inventory.py` 
 
 Tests and mock data are included in the `/test` sub-package.  You should have mock installed for Python version <= 3.0 (`pip install mock`).  
@@ -86,10 +86,10 @@ The tests will run as a self-contained script:
 
 Test fixtures are provided by a mock API response, expected dynamic inventory, and several mock configurations 
 
-##Python Version Compatability
+## Python Version Compatability
 The script has been developed and tested with Python 2.7.  Some minor effort has been made to handle cross-version compatibility, but this has **not** been tested with >= Python 3.0.  
 
-##Copyright##
+## Copyright
 Copyright 2015 Skytap Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
