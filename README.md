@@ -6,6 +6,35 @@ This Python script wraps the Environment/Configuration method of the Skytap API,
 
 Together, this dynamic inventory script and Ansible provide Skytap users the ability to finely tune administration of a sets of hosts within a Skytap Environment.  
 
+## Installation
+
+### Using pip
+You can install `skytap-ansible-inventory` directly from the GitHub repository using `pip`. This will install the package in your current Python environment:
+
+```bash
+pip install git+https://github.com/skytap/skytap-ansible-inventory.git
+```
+
+After installation, you can run the script using the `skytap-inventory` command.
+
+### Using pipx
+
+For those who prefer to install Python CLI tools in isolated environments, `pipx` is a great choice. It ensures that the package and its dependencies don't interfere with other packages and vice versa.
+
+First, make sure you have `pipx` installed. If not, you can install it using:
+
+```bash
+pip install pipx
+pipx ensurepath
+```
+
+Then, you can install `skytap-ansible-inventory` from GitHub using `pipx`:
+
+```bash
+pipx install git+https://github.com/skytap/skytap-ansible-inventory.git
+```
+
+With `pip`x, you can run the script just like before using the `skytap-inventory` command.
 
 ## Examples
 *Usage example* (Ansible-ping all of the hosts in the environment): 
