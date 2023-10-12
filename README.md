@@ -37,6 +37,20 @@ Copy the example to a file named skytap.ini, and fill in your credentials and en
 
 **Don't forget to add skytap.ini to your .ignore files for your version control system!** This file, when properly configured, will contain your Skytap API credentials, and may contain information such as SSH usernames and password.  ***Do not check it in to source control!*** 
 
+## Using Environment Variables
+
+As an alternative to the `skytap.ini` file, you can also set your Skytap credentials and environment information using environment variables. This provides flexibility in how you configure the script, especially useful for dynamic environments or CI/CD pipelines.
+
+For continuous integration (CI) and continuous deployment (CD) pipelines, using environment variables is particularly recommended. They offer a more secure and scalable way to manage sensitive data, ensuring that credentials aren't accidentally committed to version control.
+
+The following environment variables can be set:
+
+    `SKYTAP_USERNAME`: Your Skytap account username.
+    `SKYTAP_API_TOKEN`: Your Skytap API token.
+    `SKYTAP_CONFIGURATION_ID`: The specific Skytap Environment ID.
+
+If both the environment variables and the skytap.ini file are set, the environment variables will take precedence. This allows for easy overriding of settings in different execution contexts.
+
 ## Ansible Notes 
  Make sure you've got ansible installed: 
  http://docs.ansible.com/ansible/intro_installation.html 

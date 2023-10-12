@@ -148,6 +148,31 @@ class SkytapInventory(object):
         skytap_default_ini_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_filename)
         skytap_ini_path = os.path.expanduser(os.path.expandvars(os.environ.get("SKYTAP_INI", skytap_default_ini_path)))
         config.read(skytap_ini_path)
+
+        # Check for environment variables for API credentials
+        self.skytap_vars["username"] = os.environ.get("SKYTAP_USERNAME", None)
+        self.skytap_vars["api_token"] = os.environ.get("SKYTAP_API_TOKEN", None)
+        self.skytap_env_vars["configuration_id"] = os.environ.get("SKYTAP_CONFIGURATION_ID", None)
+
+        # If environment variables are not set, try to get values from the .ini file
+        if not self.skytap_vars["username"]:
+            try:
+                self.skytap_vars["username"] = config.get("skytap_vars", "username")
+            except configparser.NoOptionError:
+                pass
+
+        if not self.skytap_vars["api_token"]:
+            try:
+                self.skytap_vars["api_token"] = config.get("skytap_vars", "api_token")
+            except configparser.NoOptionError:
+                pass
+
+        if not self.skytap_env_vars["configuration_id"]:
+            try:
+                self.skytap_env_vars["configuration_id"] = config.get("skytap_env_vars", "configuration_id")
+            except configparser.NoOptionError:
+                pass
+
         return config
 
     def _load_skytap_vars(self, config):
