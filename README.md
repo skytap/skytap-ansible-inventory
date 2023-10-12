@@ -136,6 +136,7 @@ The script has been developed with Python 3.11. Versions prior 3.6 might not wor
 
 ## Copyright
 Copyright 2023 L3c Cloud.
+
 Copyright 2015 Skytap Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
