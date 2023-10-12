@@ -1,4 +1,6 @@
 #!/usr/bin/python 
+# vim: set filetype=python tabstop=4 expandtab shiftwidth=4 softtabstop=4:
+
 
 #Copyright 2015 Skytap Inc.
 #Copyright 2023 Blagovest Petrov <blago@l3c.cloud>
