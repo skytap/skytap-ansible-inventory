@@ -137,46 +137,58 @@ class SkytapInventory(object):
         self._client = Client(self.skytap_vars["base_url"], self.skytap_vars["username"], self.skytap_vars["api_token"])
 
     def read_settings(self, override_config_file=None):
-        config = configparser.ConfigParser(allow_no_value=True)
+        config = self._load_config(override_config_file)
+        self._load_skytap_vars(config)
+        self._load_skytap_env_vars(config)
+        self._load_ansible_config_vars(config)
 
-        # Determine the config filename
-        config_filename = override_config_file or "skytap.ini"
+    def _load_config(self, override_config_file):
+        config = configparser.ConfigParser(allow_no_value=True)
+        config_filename = "skytap.ini" if not override_config_file else override_config_file
         skytap_default_ini_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), config_filename)
         skytap_ini_path = os.path.expanduser(os.path.expandvars(os.environ.get("SKYTAP_INI", skytap_default_ini_path)))
         config.read(skytap_ini_path)
+        return config
 
-        # Helper function to get value from environment or config
-        def get_value(vars_dict, key, section=None, env_prefix="SKYTAP_"):
-            env_val = os.environ.get(env_prefix + key.upper())
-            if env_val:
-                return env_val
-            if section and config.has_option(section, key):
-                return config.get(section, key)
-            return vars_dict[key]
-
-        # Update skytap_vars
-        for key in self._skytap_vars:
-            self._skytap_vars[key] = get_value(self._skytap_vars, key, "skytap_vars")
-
-        # Update skytap_env_vars
-        for key in self._skytap_env_vars:
-            self._skytap_env_vars[key] = get_value(self._skytap_env_vars, key, "skytap_env_vars")
-
-        # Update ansible_config_vars
-        ansible_config_mapping = {
-            "user": "ansible_ssh_user",
-            "port": "ansible_ssh_port",
-            "pass": "ansible_ssh_pass",
-            "host": "ansible_ssh_host",
-            "private_key_file": "ansible_ssh_private_key_file"
+    def _load_skytap_vars(self, config):
+        vars_mapping = {
+            "username": "username",
+            "api_token": "api_token",
+            "base_url": "base_url"
         }
-        for key, mapped_key in ansible_config_mapping.items():
-            if config.has_option("ansible_ssh_vars", key):
-                self._ansible_config_vars[mapped_key] = config.get("ansible_ssh_vars", key)
+        for var, config_key in vars_mapping.items():
+            if self.skytap_vars[var] is None and config.has_option("skytap_vars", config_key):
+                self.skytap_vars[var] = config.get("skytap_vars", config_key)
 
-        # Set ansible vars in inventory object
+    def _load_skytap_env_vars(self, config):
+        vars_mapping = {
+            "network_type": "network_type",
+            "network_connection_id": "network_connection_id",
+            "configuration_id": "configuration_id",
+            "use_api_credentials": "use_api_credentials",
+            "skytap_vm_username": "skytap_vm_username",
+            "api_credential_delimiter": "api_credential_delimiter"
+        }
+        for var, config_key in vars_mapping.items():
+            if config.has_option("skytap_env_vars", config_key):
+                value = config.get("skytap_env_vars", config_key)
+                if var == "use_api_credentials":
+                    self.skytap_env_vars[var] = value.upper() == 'TRUE'
+                else:
+                    self.skytap_env_vars[var] = value
+
+    def _load_ansible_config_vars(self, config):
+        vars_mapping = {
+            "ansible_ssh_user": "user",
+            "ansible_ssh_port": "port",
+            "ansible_ssh_pass": "pass",
+            "ansible_ssh_host": "host",
+            "ansible_ssh_private_key_file": "private_key_file"
+        }
+        for var, config_key in vars_mapping.items():
+            if config.has_option("ansible_ssh_vars", config_key):
+                self.ansible_config_vars[var] = config.get("ansible_ssh_vars", config_key)
         self._inventory_template["skytap_environment"]["vars"] = self._ansible_config_vars
-
 
     def get_data(self):
         query_string = f"{RESOURCE_NAME}/{self.skytap_env_vars['configuration_id']}.json"
