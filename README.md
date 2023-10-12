@@ -120,6 +120,8 @@ empty parameters.  You'll probably get esoteric SSH errors such as:
 use the `[ansible_ssh_vars]` block in your skytap.ini to set parameters specific to your Skytap Environment (such as usernames, SSH key locations, ports -- see `EXAMPLE_skytap.ini` for possible values
 
 ## Unit Tests
+
+### <<<Unit tests are currently broken. They were made for the old version which was using Python 2.6.>>>
 If you need to extend the inventory script for personal use, this package includes a basic set of unit tests which should validate correct behavior for  `skytap_inventory.py` 
 
 Tests and mock data are included in the `/test` sub-package.  You should have mock installed for Python version <= 3.0 (`pip install mock`).  
@@ -130,9 +132,10 @@ The tests will run as a self-contained script:
 Test fixtures are provided by a mock API response, expected dynamic inventory, and several mock configurations 
 
 ## Python Version Compatability
-The script has been developed and tested with Python 2.7.  Some minor effort has been made to handle cross-version compatibility, but this has **not** been tested with >= Python 3.0.  
+The script has been developed with Python 3.11. Versions prior 3.6 might not work.
 
 ## Copyright
+Copyright 2023 L3c Cloud.
 Copyright 2015 Skytap Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
