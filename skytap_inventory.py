@@ -36,7 +36,7 @@ class Client(object):
     def __init__(self, base_url, username, password, **kwargs):
         """Initialize a client session"""
         self.session = requests.Session()
-        self.session.mount("http://", HTTPAdapter(max_retries=kwargs.get("max_retries", 5)))
+        # self.session.mount("http://", HTTPAdapter(max_retries=kwargs.get("max_retries", 5)))
         self.session.mount("https://", HTTPAdapter(max_retries=kwargs.get("max_retries", 5)))
         self.session.auth = (username, password)
         self.session.verify = kwargs.get("ssl_cert_file", True)
