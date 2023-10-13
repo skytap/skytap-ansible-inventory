@@ -6,6 +6,35 @@ This Python script wraps the Environment/Configuration method of the Skytap API,
 
 Together, this dynamic inventory script and Ansible provide Skytap users the ability to finely tune administration of a sets of hosts within a Skytap Environment.  
 
+## Installation
+
+### Using pip
+You can install `skytap-ansible-inventory` directly from the GitHub repository using `pip`. This will install the package in your current Python environment:
+
+```bash
+pip install git+https://github.com/skytap/skytap-ansible-inventory.git
+```
+
+After installation, you can run the script using the `skytap-inventory` command.
+
+### Using pipx
+
+For those who prefer to install Python CLI tools in isolated environments, `pipx` is a great choice. It ensures that the package and its dependencies don't interfere with other packages and vice versa.
+
+First, make sure you have `pipx` installed. If not, you can install it using:
+
+```bash
+pip install pipx
+pipx ensurepath
+```
+
+Then, you can install `skytap-ansible-inventory` from GitHub using `pipx`:
+
+```bash
+pipx install git+https://github.com/skytap/skytap-ansible-inventory.git
+```
+
+With `pip`x, you can run the script just like before using the `skytap-inventory` command.
 
 ## Examples
 *Usage example* (Ansible-ping all of the hosts in the environment): 
@@ -36,6 +65,20 @@ A third block, `[ansible_ssh_vars]` may be used to override SSH parameters confi
 Copy the example to a file named skytap.ini, and fill in your credentials and environment info.  
 
 **Don't forget to add skytap.ini to your .ignore files for your version control system!** This file, when properly configured, will contain your Skytap API credentials, and may contain information such as SSH usernames and password.  ***Do not check it in to source control!*** 
+
+## Using Environment Variables
+
+As an alternative to the `skytap.ini` file, you can also set your Skytap credentials and environment information using environment variables. This provides flexibility in how you configure the script, especially useful for dynamic environments or CI/CD pipelines.
+
+For continuous integration (CI) and continuous deployment (CD) pipelines, using environment variables is particularly recommended. They offer a more secure and scalable way to manage sensitive data, ensuring that credentials aren't accidentally committed to version control.
+
+The following environment variables can be set:
+
+    `SKYTAP_USERNAME`: Your Skytap account username.
+    `SKYTAP_API_TOKEN`: Your Skytap API token.
+    `SKYTAP_CONFIGURATION_ID`: The specific Skytap Environment ID.
+
+If both the environment variables and the skytap.ini file are set, the environment variables will take precedence. This allows for easy overriding of settings in different execution contexts.
 
 ## Ansible Notes 
  Make sure you've got ansible installed: 
@@ -77,6 +120,8 @@ empty parameters.  You'll probably get esoteric SSH errors such as:
 use the `[ansible_ssh_vars]` block in your skytap.ini to set parameters specific to your Skytap Environment (such as usernames, SSH key locations, ports -- see `EXAMPLE_skytap.ini` for possible values
 
 ## Unit Tests
+
+### <<<Unit tests are currently broken. They were made for the old version which was using Python 2.6.>>>
 If you need to extend the inventory script for personal use, this package includes a basic set of unit tests which should validate correct behavior for  `skytap_inventory.py` 
 
 Tests and mock data are included in the `/test` sub-package.  You should have mock installed for Python version <= 3.0 (`pip install mock`).  
@@ -87,9 +132,11 @@ The tests will run as a self-contained script:
 Test fixtures are provided by a mock API response, expected dynamic inventory, and several mock configurations 
 
 ## Python Version Compatability
-The script has been developed and tested with Python 2.7.  Some minor effort has been made to handle cross-version compatibility, but this has **not** been tested with >= Python 3.0.  
+The script has been developed with Python 3.11. Versions prior 3.6 might not work.
 
 ## Copyright
+Copyright 2023 L3c Cloud.
+
 Copyright 2015 Skytap Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
